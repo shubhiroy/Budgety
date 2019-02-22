@@ -10,6 +10,14 @@ var budgetController = (function(){
         this.value = value;
     };
 
+    var calcTotal = function(type){
+        var sum = 0;
+        data.allItems[type].forEach(function(ele){
+            sum = sum + ele.value;
+        });
+        data.totals[type] = sum;
+    }
+
     var data = {
         allItems: {
             exp: [],
@@ -18,7 +26,11 @@ var budgetController = (function(){
         totals: {
             exp: 0,
             inc: 0
-        }
+        },
+
+        budget: 0,
+
+        percentage: -1
     }
 
     return {
@@ -39,6 +51,31 @@ var budgetController = (function(){
 
             data.allItems[type].push(newItem);
             return newItem;
+        },
+
+        calcBudget: function(){
+            //Calculate total income and expenses
+            calcTotal('inc');
+            calcTotal('exp');
+
+            //Calculate the budget: income - expenses
+            data.budget = data.totals.inc - data.totals.exp;
+
+            //Calculate the percentage
+            if(data.totals.inc > 0){
+                data.percentage = Math.round((data.totals.exp/data.totals.inc) * 100);
+            }else{
+                data.percentage = -1;
+            }
+        },
+
+        getBudget: function(){
+            return {
+                budget: data.budget,
+                totalInc: data.totals.inc,
+                totalExp: data.totals.exp,
+                percentage: data.percentage
+            }
         },
 
         testing: function(){
@@ -112,16 +149,29 @@ var UIControler = (function(){
 })();
 
 var AppControler = (function(budgtCtrl, UICtrl){
+    var cntrlAddItem = function(){
+        var input, newItem;
+        input = UICtrl.getInputData();
+        if(input.desc!=="" && !isNaN(input.val) && input.val > 0){
+            newItem = budgtCtrl.addItem(input.type,input.desc,input.val);
+            UICtrl.addItemList(newItem,input.type);
+            UICtrl.clearList();
+            updateBudget();
+        } 
+    };
+    var updateBudget = function(){
+        var budget;
+
+        //Calculate the budget
+        budgtCtrl.calcBudget();
+
+        //Return the budget
+        budget = budgtCtrl.getBudget();
+        
+        //Display the budget on the UI
+        console.log(budget);
+    }
     var init = function(){
-        var cntrlAddItem = function(){
-            var input, newItem;
-            input = UICtrl.getInputData();
-            if(input.desc!=="" && !isNaN(input.val) && input.val > 0){
-                newItem = budgtCtrl.addItem(input.type,input.desc,input.val);
-                UICtrl.addItemList(newItem,input.type);
-                UICtrl.clearList();
-            } 
-        };
         document.querySelector(UICtrl.getDOMstrings().addBtn).addEventListener('click',cntrlAddItem);
         document.addEventListener('keypress',function(event){
             if(event.keyCode === 13 || event.which === 13){
