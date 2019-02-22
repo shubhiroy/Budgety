@@ -53,7 +53,9 @@ var UIControler = (function(){
         type: '.add__type',
         description: '.add__description',
         value: '.add__value',
-        addBtn: '#add__btn'
+        addBtn: '#add__btn',
+        addValue: '.add__value',
+        addDesc: '.add__description'
     }
     return {
 
@@ -61,7 +63,7 @@ var UIControler = (function(){
             return {
                 type: document.querySelector(DOMstrings.type).value,
                 desc: document.querySelector(DOMstrings.description).value,
-                val:  document.querySelector(DOMstrings.value).value
+                val:  parseFloat(document.querySelector(DOMstrings.value).value)
             }
         },
 
@@ -91,10 +93,20 @@ var UIControler = (function(){
                 newHtml = newHtml.replace('%percentage%',percentage);
             }
 
-
             //Insert the html into the DOM
             document.querySelector(element).insertAdjacentHTML('beforeend',newHtml);
+        },
 
+        clearList: function(){
+            var fields, fieldsArray;
+
+            fields = document.querySelectorAll(DOMstrings.addValue + ',' + DOMstrings.addDesc);
+            fieldsArray = Array.prototype.slice.call(fields);
+            fieldsArray.forEach(function(current, index, array){
+                current.value="";
+            });
+
+            fieldsArray[0].focus();
         }
     };
 })();
@@ -104,10 +116,11 @@ var AppControler = (function(budgtCtrl, UICtrl){
         var cntrlAddItem = function(){
             var input, newItem;
             input = UICtrl.getInputData();
-            newItem = budgtCtrl.addItem(input.type,input.desc,input.val);
-            console.log(newItem);
-            // budgtCtrl.testing();
-            UICtrl.addItemList(newItem,input.type);
+            if(input.desc!=="" && !isNaN(input.val) && input.val > 0){
+                newItem = budgtCtrl.addItem(input.type,input.desc,input.val);
+                UICtrl.addItemList(newItem,input.type);
+                UICtrl.clearList();
+            } 
         };
         document.querySelector(UICtrl.getDOMstrings().addBtn).addEventListener('click',cntrlAddItem);
         document.addEventListener('keypress',function(event){
