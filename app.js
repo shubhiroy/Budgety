@@ -3,7 +3,21 @@ var budgetController = (function(){
         this.id = id;
         this.description = description;
         this.value = value;
+        this.percentage = -1;
     };
+
+    Expenses.prototype.calcPercentage = function(totalInc){
+        if(totalInc > 0){
+            this.percentage = Math.round((this.value / totalInc) * 100);
+        }else{
+            this.percentage = -1;
+        }
+    }
+
+    Expenses.prototype.getPercentage = function(){
+        return this.percentage;
+    }
+
     var Incomes = function(id, description, value){
         this.id = id;
         this.description = description;
@@ -78,13 +92,18 @@ var budgetController = (function(){
             }
         },
 
-        percentageCalc: function(){
-            var percentArray, mult;
-            mult = 100 / data.totals.inc;
-            percentArray = data.allItems['exp'].map(function(ele){
-                return ele.value * mult;
+        calculatePercentage: function(){
+            data.allItems.exp.forEach(function(ele){
+                ele.calcPercentage(data.totals.inc);
             });
-            return percentArray;
+        },
+
+        getPercentage: function(){
+            var allPerc;
+            allPerc = data.allItems.exp.map(function(ele){
+                return ele.percentage;
+            });
+            return allPerc;
         },
 
         getBudget: function(){
@@ -116,6 +135,7 @@ var UIControler = (function(){
         expensesLabel: '.budget__expenses--value',
         percentageLabel: '.budget__expenses--percentage',
         container: '.container',
+        expensesPercLabel: '.item__percentage',
     }
     return {
 
@@ -175,6 +195,25 @@ var UIControler = (function(){
                 document.querySelector(DOMstrings.percentageLabel).textContent = '---';
             }
 
+        },
+
+        diplayPercentage: function(percentages){
+            var fields, nodeListForEach;
+            fields = document.querySelectorAll(DOMstrings.expensesPercLabel);
+
+            var nodeListForEach = function(list, callback){
+                for(var i=0;i<list.length;i++){
+                    callback(list[i],i);
+                }
+            };
+            
+            nodeListForEach(fields,function(ele,index){
+                if(percentages[index] > 0){
+                    ele.textContent = percentages[index] + '%';    
+                }else{
+                    ele.textContent = '---';
+                } 
+            });
         },
 
         clearList: function(){
@@ -248,8 +287,11 @@ var AppControler = (function(budgtCtrl, UICtrl){
 
     var updatePercetages = function(){
         // 1) Calculate the percentages
-        console.log(budgtCtrl.percentageCalc());
-        // 2)Update UI
+        budgtCtrl.calculatePercentage();
+        // 2) Get percentages
+        var allPerc = budgtCtrl.getPercentage()
+        // 3) Update percentages in UI
+        UICtrl.diplayPercentage(allPerc);
     }
 
     return {
